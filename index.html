@@ -1,26 +1,29 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <meta charset="UTF-8">
+  <title>Test CORS TikTok</title>
+</head>
 <body>
-<h2>CORS Test PoC</h2>
-
 <script>
-fetch("https://survey.tiktok.com", {
-    method: "GET",
-    credentials: "include"
-})
-.then(response => {
-    document.body.innerHTML += "<p>Status: " + response.status + "</p>";
-    return response.text();
-})
-.then(text => {
-    const pre = document.createElement('pre');
-    pre.textContent = text;
-    document.body.appendChild(pre);
-})
-.catch(err => {
-    document.body.innerHTML += "<p style='color:red'>Errore: " + err + "</p>";
-});
+async function testCORS() {
+    const url = 'https://www.tiktok.com/v2/bytesync/api/pipeline?device_id=7116048904945255451&platform=0&aid=1988';
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            credentials: 'include', // invia cookie
+            headers: {
+                'Content-Type': 'application/octet-stream'
+            },
+            body: 'CnQIAhJMTVM0d0xqQUJBQUFBTTVxeHJyQlJrZDJMRWNfUjRuS3pMWll6UmJoVGNGaFNJS0Z3MlpnQVJOLXdiQTFxUVBwdFJWNzd0X29kVHJzRBoTNzExNjA0ODkwNDk0NTI1NTQ1MSC3wvmtrTMoADIAOABAAA=='
+        });
+        const data = await response.text();
+        console.log(data);
+    } catch (err) {
+        console.error('Errore:', err);
+    }
+}
+testCORS();
 </script>
-
 </body>
 </html>
